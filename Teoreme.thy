@@ -311,8 +311,7 @@ qed
 (* 123. *)
 (* a) *)
 
-(* Dokaz injektivnosti funkcije f po slucajevima, skup se sad zove W jer ako ga nezovemo A,
-to ce pokvariti sledece dokaze posto ce dokazivac misliti da je A ovaj skup odavde: *)
+(* Dokaz injektivnosti funkcije f po slucajevima *)
 definition W :: "real set" where "W = {x. 0 ≤ x ∧ x ≤ 1}"
 definition f :: "real ⇒ real" where
  "f x = (if x ∈ W then x^2 + 1 else x + 1)"
@@ -351,28 +350,92 @@ assume *: "f x1 = f x2" and "x1 ∉ W" and "x2 ∉ W"
     by auto
 qed
 
-(* jedan od x1 i x2, recimo x1, je u W, a drugi nije*)
-lemma kvadrat: shows "x ∈ W ⟶ x^2 ∈ W"
+(* jedan od x1 i x2, recimo x1, je u W, a drugi nije, 
+ovde ne mozemo ni imati iste slike za x1 i x2, a evo i zasto *)
+lemma kvadrat: shows "x \<in> W \<longrightarrow> x^2 \<in> W"
 proof safe
-  assume "x ∈ W"
-  thus "x^2 ∈ W"
+  assume "x \<in> W"
+  thus "x^2 \<in> W"
     unfolding f_def
     unfolding W_def
-    using assms
-   apply auto
-   by (metis power_mono power_one)
+    by (auto simp add: Power.linordered_idom_class.abs_square_le_1)
 qed
 
-lemma "x1 ∈ W ∧ x2 ∉ W ⟶ f x1 ≠ f x2" (is "?levo ⟶ ?desno")
+lemma "x1 \<in> W \<and> x2 \<notin> W \<longrightarrow> f x1 \<noteq> f x2"
 proof safe
   fix x1::real
   fix x2::real
-  assume *: "x1 ∈ W" and "x2 ∉ W"
-    hence "x1^2 ∈ W"
-      using kvadrat
+  assume *: "x1 \<in> W" and "x2 \<notin> W"
+  hence "f x1 = x1^2+1"
+    using `x1 \<in> W`
+    unfolding f_def
+    by (auto simp add:f_def)
+  also have "x1^2 \<in> W"
+    using kvadrat `x1 \<in> W` 
+    by auto
+  hence "(x1^2 + 1) \<in> {x. 1 \<le> x \<and> x \<le> 2}"
+    using kvadrat `x1 \<in> W`
+    by (auto simp add: W_def)
+  hence "f x1 \<in> {x. 1 \<le> x \<and> x \<le> 2}"
+    using `x1 \<in> W`
+    by (auto simp add: f_def W_def)
+  have "(x2 + 1 >  2 \<or> x2 + 1 < 1)"
+    using `x2 \<notin> W`
+    by (auto simp add:W_def)
+  hence "(x2 + 1 \<notin> {x. 1 \<le> x \<and> x \<le> 2})"
+    using `x2 \<notin> W`
+    by auto
+  hence "f x2 \<notin> {x. 1 \<le> x \<and> x \<le> 2}"
+    using `x2 \<notin> W`
+    by (auto simp add: f_def W_def)
+  thus " x1 \<in> W \<Longrightarrow> x2 \<notin> W \<Longrightarrow> f x1 = f x2 \<Longrightarrow> False"
+    using `x2 \<notin> W` `x1 \<in> W` `x1^2 \<in> W`
+    by (auto simp add: W_def f_def)
+qed
+
+(* dokaz surjektivnosti funkcije f po slucajevima: *)
+definition skup1 :: "real set" where "skup1 = {x. 1 ≤ x ∧ x ≤ 2}"
+
+lemma "x \<in> W \<longrightarrow> f x \<in> skup1"
+  proof
+    fix x::real
+    assume "x \<in> W"
+    obtain y where "y = f x"
       by auto
-   hence "x1^2 ≠ x2"
-      by (metis `x2 ∉ W`)
-   hence "x1^2 + 1 ≠ x2 + 1"
-    by (metis add_imp_eq comm_semiring_1_class.normalizing_semiring_rules(24))
-oops
+    hence "y = x^2 +1"
+      using `x \<in> W`
+      unfolding f_def
+      by auto
+    hence "y \<in> skup1"
+      unfolding skup1_def
+      using `y = f x`
+      by (smt W_def ‹x ∈ W› mem_Collect_eq one_power2 power_mono zero_le_power2)
+    thus "f x \<in> skup1"
+     by (simp add: ‹y = f x›)
+ qed
+
+definition skup2 :: "real set" where "skup2 = {x. x < 1 \<or> x > 2}"
+
+lemma "x \<notin> W \<longrightarrow> f x \<in> skup2"
+proof
+    fix x::real
+    assume "x \<notin> W"
+    hence "x < 0 \<or> x > 1"
+      unfolding W_def
+      by auto
+    obtain y where "y = f x"
+      by auto
+    hence "y = x + 1"
+      using `x \<notin> W`
+      unfolding f_def
+      by auto
+    hence "y \<in> skup2"
+      unfolding skup2_def
+      using `y = f x`
+      by (simp add: ‹y = f x› ‹x < 0 ∨ 1 < x›)
+    thus "f x \<in> skup2"
+      sledgehammer
+      by (simp add: ‹y = f x›)
+  qed
+
+   
