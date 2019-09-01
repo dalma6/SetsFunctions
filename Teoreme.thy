@@ -1,3 +1,4 @@
+
 theory Teoreme
 imports Complex_Main
 begin
@@ -213,52 +214,165 @@ next
    qed
 qed
 
+(* 43. *)
+(* a) *)
+
+lemma "(A ∪ B) × C = (A × C) ∪ (B × C)" (is "?levo = ?desno")
+proof
+  show "?levo ⊆ ?desno"
+  proof
+    fix z
+    assume *: "z ∈ (A ∪ B) × C"
+    obtain x y where z: "z = (x, y)"
+      by (cases z) auto
+      have "(x, y) ∈ ?levo"
+      using * z
+      by auto
+    hence "x ∈ A ∪ B ∧ y ∈ C"
+      by (metis `(x, y) ∈ (A ∪ B) × C` mem_Sigma_iff)
+    hence "(x ∈ A ∨ x ∈ B) ∧ y ∈ C"
+      by auto
+    hence "(x ∈ A ∧ y ∈ C) ∨ (x ∈ B ∧ y ∈ C)"
+      by auto
+    hence "(x, y) ∈ A × C ∨ (x, y) ∈ B × C"
+      by auto
+    hence "(x, y) ∈ A × C ∪ B × C"
+      by auto
+    hence "(x, y) ∈ A × C ∪ B × C"
+      by (metis Sigma_Un_distrib1 `(x, y) ∈ (A ∪ B) × C`)
+    hence "(x, y) ∈ ?desno"
+      by metis
+    thus "z \<in> ?desno"
+     using * z
+     by auto
+qed
+next
+show "?desno ⊆ ?levo"
+ proof
+    fix z
+    assume *: "z ∈ ?desno"
+    obtain x y where z: "z = (x, y)"
+      by (cases z) auto
+    have "(x, y) ∈ ?desno"
+      using * z
+      by auto
+    hence "x ∈ A ∧ y ∈ C ∨ x ∈ B ∧ y ∈ C"
+      by auto
+    hence "x ∈ A ∨ x ∈ B ∧ y ∈ C"
+      by auto
+    hence "(x, y) ∈ (A ∪ B) × C"
+      by (metis "*" Sigma_Un_distrib1 z)
+    thus "z \<in> ?levo"
+     using * z
+     by auto
+   qed
+qed
+
+(* v) *)
+lemma "(A - B) × C = (A × C) - (B × C)" (is "?levo = ?desno")
+proof
+  show "?levo ⊆ ?desno"
+  proof
+    fix z
+      assume *: "z ∈ ?levo"
+      obtain x y where z: "z = (x, y)"
+        by (cases z) auto
+      have "(x, y) ∈ ?levo"
+        using * z
+        by auto
+      hence "x ∈ A ∧ x ∉ B ∧ y ∈ C"
+        by auto
+      hence "(x, y) ∈ ?desno"
+        by auto
+      thus "z ∈ ?desno"  
+        using * z
+        by auto
+    qed
+next 
+show "?desno ⊆ ?levo"
+proof
+    fix z
+    assume *: "z ∈ ?desno"
+    obtain x y where z: "z = (x, y)"
+      by (cases z) auto
+    have "(x, y) ∈ ?desno"
+      using * z
+      by auto
+   hence "x ∈ A ∧ y ∈ C ∧ ¬ (x ∈ B ∧ y ∈ C)"
+    by auto
+   hence "(x, y) ∈ ?levo"
+    by auto
+   thus "z ∈ ?levo"
+    using z *
+    by auto
+  qed
+qed
+
 (* 123. *)
 (* a) *)
 
-definition A :: "real set" where "A = {x. 0 \<le> x \<and> x \<le> 1}"
-definition f :: "real \<Rightarrow> real" where
- "f x = (if x \<in> A then x^2 + 1 else x + 1)"
+(* Dokaz injektivnosti funkcije f po slucajevima, skup se sad zove W jer ako ga nezovemo A,
+to ce pokvariti sledece dokaze posto ce dokazivac misliti da je A ovaj skup odavde: *)
+definition W :: "real set" where "W = {x. 0 ≤ x ∧ x ≤ 1}"
+definition f :: "real ⇒ real" where
+ "f x = (if x ∈ W then x^2 + 1 else x + 1)"
 
-lemma "\<forall> x1 \<in> A. \<forall> x2 \<in> A. f x1 = f x2 \<longrightarrow> x1 = x2"
-proof
+(* x1 i x2 su oba u skupu W *)
+lemma "∀ x1 ∈ W. ∀ x2 ∈ W. f x1 = f x2 ⟶ x1 = x2"
+proof safe
   fix x1::real
   fix x2::real
-  assume "f x1 = f x2" and "x1 \<in> A" and "x2 \<in> A" and "0 \<le> x1 \<and> x1 \<le> 1 \<and> 0 \<le> x2 \<and> x2 \<le> 1"
+  assume *: "f x1 = f x2" and "x1 ∈ W" and "x2 ∈ W"
     hence "x1^2 + 1 = x2^2 + 1"
-      using assms
-      by (metis f_def linorder_linear order_trans zero_le_one)
+      using *
+      unfolding f_def
+      by auto
     hence "x1^2 = x2^2"
       by auto  
-    hence "x1 = x2"  
-       using assms
+    thus "x1 = x2"  
        using `f x1 = f x2`
-       using `x1 \<in> A` and `x2 \<in> A`
-       unfolding inj_on_def
-       using `0 \<le> x1 \<and> x1 \<le> 1 \<and> 0 \<le> x2 \<and> x2 \<le> 1`
+       using `x1 ∈ W` and `x2 ∈ W`
+       unfolding W_def
+       apply auto
        by (metis power2_eq_imp_eq)
+qed
 
-(* 43. *)
-(* a) *)
-(*lemma "(A \<union> B) \<times> C = (A \<times> C) \<union> (B \<times> C)" (is "?levo = ?desno")
-proof
-  show "?levo \<subseteq> ?desno"
-  proof
-    fix x and y
-    assume "(x, y) \<in> ?levo"
-    hence "x \<in> A \<union> B \<and> y \<in> C"
-      by (metis `(x, y) \<in> (A \<union> B) \<times> C` mem_Sigma_iff)
-    hence "(x \<in> A \<or> x \<in> B) \<and> y \<in> C"
-      by auto
-    hence "(x \<in> A \<and> y \<in> C) \<or> (x \<in> B \<and> y \<in> C)"
-      by auto
-    hence "(x, y) \<in> A \<times> C \<or> (x, y) \<in> B \<times> C"
-      by auto
-    hence "(x, y) \<in> A \<times> C \<union> B \<times> C"
-      by auto
-    hence "(x, y) \<in> A \<times> C \<union> B \<times> C"
-      by (metis Sigma_Un_distrib1 `(x, y) \<in> (A \<union> B) \<times> C`)
-    hence "(x, y) \<in> ?desno"
-      by metis*)
+(* nijedan od x1 i x2 nije u skupu W *)
+lemma "x1 ∉ W ∧ x2 ∉ W ∧ f x1 = f x2 ⟶ x1 = x2"
+proof safe
+  fix x1::real
+  fix x2::real
+assume *: "f x1 = f x2" and "x1 ∉ W" and "x2 ∉ W"
+  hence "x1 + 1 = x2 + 1"
+    using *
+    unfolding f_def
+    by auto
+  thus "x1 = x2"
+    by auto
+qed
 
-end
+(* jedan od x1 i x2, recimo x1, je u W, a drugi nije*)
+lemma kvadrat: shows "x ∈ W ⟶ x^2 ∈ W"
+proof safe
+  assume "x ∈ W"
+  thus "x^2 ∈ W"
+    unfolding f_def
+    unfolding W_def
+    using assms
+   apply auto
+   by (metis power_mono power_one)
+qed
+
+lemma "x1 ∈ W ∧ x2 ∉ W ⟶ f x1 ≠ f x2" (is "?levo ⟶ ?desno")
+proof safe
+  fix x1::real
+  fix x2::real
+  assume *: "x1 ∈ W" and "x2 ∉ W"
+    hence "x1^2 ∈ W"
+      using kvadrat
+      by auto
+   hence "x1^2 ≠ x2"
+      by (metis `x2 ∉ W`)
+   hence "x1^2 + 1 ≠ x2 + 1"
+    by (metis add_imp_eq comm_semiring_1_class.normalizing_semiring_rules(24))
+oops
